@@ -57,11 +57,13 @@ public class Normalizer {
   private final List<ExpressionStmt> expressions = new ArrayList<>();
   private final List<ModifierVisitor<Void>> visitors;
   private final HashMap<DepKey, ExpressionStmt> mAss;
+  private final JavaParser javaParser;
 
   public Normalizer(final CompilationUnit cu) {
     this.cu = cu;
     visitors = new ArrayList<>();
     mAss = new HashMap<>();
+    javaParser = new JavaParser();
   }
 
   public CompilationUnit normalize() {
@@ -91,7 +93,7 @@ public class Normalizer {
       // System.out.println(mv.getClass().getSimpleName());
       // System.out.println();
       // System.out.println(newCu);
-      cu = JavaParser.parse(newCu);
+      cu = javaParser.parse(newCu).getResult().get();
     }
     return cu;
   }
@@ -379,8 +381,7 @@ public class Normalizer {
 
   private Expression getForIteratorStmt(final Type type, final Expression list) {
     final Type wrapperType = toWrapperType(type);
-    final ClassOrInterfaceType itType =
-        JavaParser.parseClassOrInterfaceType("Iterator<" + wrapperType + ">");
+    final ClassOrInterfaceType itType = javaParser.parseClassOrInterfaceType("Iterator<" + wrapperType + ">").getResult().get();
     final String name = nextVarId();
     final MethodCallExpr init = new MethodCallExpr(list, "iterator");
     final VariableDeclarator varDecl = new VariableDeclarator(itType, name, init);
@@ -475,7 +476,7 @@ public class Normalizer {
   }
 
   private Comment getParentStmtComment(final Node n, final int line) {
-    final Optional<Statement> o = n.findParent(Statement.class);
+    final Optional<Statement> o = n.findAncestor(Statement.class);
     if (o.isPresent() && o.get().getComment().isPresent()) {
       return o.get().getComment().get();
     }
@@ -677,21 +678,21 @@ public class Normalizer {
   private Type toWrapperType(final Type type) {
     switch (type.asString()) {
       case "byte":
-        return JavaParser.parseClassOrInterfaceType("Byte");
+        return javaParser.parseClassOrInterfaceType("Byte").getResult().get();
       case "short":
-        return JavaParser.parseClassOrInterfaceType("Short");
+        return javaParser.parseClassOrInterfaceType("Short").getResult().get();
       case "int":
-        return JavaParser.parseClassOrInterfaceType("Integer");
+        return javaParser.parseClassOrInterfaceType("Integer").getResult().get();
       case "long":
-        return JavaParser.parseClassOrInterfaceType("Long");
+        return javaParser.parseClassOrInterfaceType("Long").getResult().get();
       case "float":
-        return JavaParser.parseClassOrInterfaceType("Float");
+        return javaParser.parseClassOrInterfaceType("Float").getResult().get();
       case "double":
-        return JavaParser.parseClassOrInterfaceType("Double");
+        return javaParser.parseClassOrInterfaceType("Double").getResult().get();
       case "char":
-        return JavaParser.parseClassOrInterfaceType("Character");
+        return javaParser.parseClassOrInterfaceType("Character").getResult().get();
       case "boolean":
-        return JavaParser.parseClassOrInterfaceType("Boolean");
+        return javaParser.parseClassOrInterfaceType("Boolean").getResult().get();
       default:
         return type;
     }
@@ -706,7 +707,7 @@ public class Normalizer {
   }
 
   private Type defaultType() {
-    return JavaParser.parseClassOrInterfaceType("Object");
+    return javaParser.parseClassOrInterfaceType("Object").getResult().get();
   }
 
   private int getBeginLine(final Node n) {
@@ -716,7 +717,7 @@ public class Normalizer {
   private Comment findParentComment(final Node node) {
     while (!node.getComment().isPresent()
         || !node.getComment().get().getContent().contains(COMMENT_TAG)) {
-      final Node p = node.findParent(Node.class).get();
+      final Node p = node.findAncestor(Node.class).get();
       return findParentComment(p);
     }
     return node.getComment().get();

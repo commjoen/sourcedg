@@ -68,7 +68,8 @@ public class Denormalizer {
       // System.out.println(mv.getClass().getSimpleName());
       // System.out.println();
       // System.out.println(newCu);
-      cu = JavaParser.parse(newCu);
+      JavaParser javaParser = new JavaParser();
+      cu = javaParser.parse(newCu).getResult().get();
     }
     return cu;
   }

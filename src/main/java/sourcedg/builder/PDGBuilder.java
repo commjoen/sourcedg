@@ -40,6 +40,7 @@ public class PDGBuilder {
 	private CompilationUnit originalCu;
 	private CompilationUnit normalizedCu;
 	private CDGBuilder cdgBuilder;
+	private JavaParser javaParser;
 
 	public PDGBuilder(PDGBuilderConfig config) {
 		this(config, Level.OFF);
@@ -48,17 +49,18 @@ public class PDGBuilder {
 	public PDGBuilder(PDGBuilderConfig config, final Level logLevel) {
 		this.config = config;
 		LOGGER.setLevel(logLevel);
+		this.javaParser = new JavaParser();
 	}
 
 	public void build(final InputStream in) {
-		final CompilationUnit cu = JavaParser.parse(in);
+		final CompilationUnit cu = javaParser.parse(in).getResult().get();
 		build(cu);
 	}
 
 	public void build(final Path in) {
 		try {
 			CompilationUnit cu;
-			cu = JavaParser.parse(in);
+			cu = javaParser.parse(in).getResult().get();
 			build(cu);
 		} catch (final IOException e) {
 			e.printStackTrace();
@@ -66,7 +68,7 @@ public class PDGBuilder {
 	}
 
 	public void build(final String in) {
-		final CompilationUnit cu = JavaParser.parse(in);
+		final CompilationUnit cu = javaParser.parse(in).getResult().get();
 		build(cu);
 	}
 
@@ -79,9 +81,9 @@ public class PDGBuilder {
 			cu.findAll(ImportDeclaration.class).stream().forEach(Node::remove);
 		}
 		if (config.isRemoveComments() || config.isRemoveImports()) {
-			cu = JavaParser.parse(cu.toString());
+			cu = javaParser.parse(cu.toString()).getResult().get();
 		}
-		originalCu = JavaParser.parse(cu.toString());
+		originalCu = javaParser.parse(cu.toString()).getResult().get();
 		if (config.isNormalize()) {
 			final Normalizer normalizer = new Normalizer(cu);
 			cu = normalizer.normalize();
